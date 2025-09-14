@@ -1,0 +1,43 @@
+# .github/workflows/build-summary.yml
+name: Build Summary Reporter
+
+on:
+  workflow_run:
+    workflows: 
+      - "Docker Build & Push" # Name of the workflow to monitor
+      - "React CI" # Name of the workflow to monitor
+      - "Terraform Deploy" # Name of the workflow to monitor
+    types:
+      - completed
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print Build Result
+        run: |
+          echo "🔎 Workflow: ${{ github.event.workflow_run.name }}"
+          echo "🔎 Run ID: ${{ github.event.workflow_run.id }}"
+          echo "🔎 Conclusion: ${{ github.event.workflow_run.conclusion }}"
+
+          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+            echo "🎉 ${{ github.event.workflow_run.name }} completed successfully!"
+          else
+            echo "❌ ${{ github.event.workflow_run.name }} failed. Check logs in run ID: ${{ github.event.workflow_run.id }}"
+          fi
+
+      - name: Write Job Summary
+        run: |
+          {
+            echo "## 📝 Build Summary"
+            echo ""
+            echo "- **Workflow Name:** ${{ github.event.workflow_run.name }}"
+            echo "- **Run ID:** ${{ github.event.workflow_run.id }}"
+            echo "- **Status:** ${{ github.event.workflow_run.conclusion }}"
+            echo ""
+            if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+              echo "✅ ${{ github.event.workflow_run.name }} finished successfully!"
+            else
+              echo "❌ ${{ github.event.workflow_run.name }} failed. Please [check logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}) for details."
+            fi
+          } >> $GITHUB_STEP_SUMMARY
